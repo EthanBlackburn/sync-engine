@@ -3,9 +3,13 @@ import base64
 import email.header
 import uuid
 import gevent
+import re
 import time
 from datetime import datetime
 
+from inbox.models.session import session_scope
+
+from flanker import mime
 from flask import request, g, Blueprint, make_response, Response
 from flask import jsonify as flask_jsonify
 from flask.ext.restful import reqparse
@@ -1054,7 +1058,35 @@ def draft_delete_api(public_id):
 
 @app.route('/send', methods=['POST'])
 def draft_send_api():
-    data = request.get_json(force=True)
+    try:
+        data = request.get_json(force=True)
+    except Exception:
+        #request data could be raw mime string
+        data = {}
+        mime_string = request.data
+        parsed_mime = mime.from_string(mime_string)
+        for header, value in parsed_mime.headers.items():
+            if header in ['To', 'From']:
+                email_list = value.split(',')
+                email_regex = re.compile(r'[\w\.-]+@[\w\.-]+')
+                data[header.lower()] = []
+                for email in email_list:
+                    email_match = re.findall(email_regex, email)
+                    name = ''
+                    if email.find('<') != -1:
+                        name = email[:email.find('<')].strip()
+                    data[header.lower()].append({'name':name, 'email':email_match[0] if email_match else ''})
+            elif isinstance(value, basestring):
+                data[header.lower()] = value
+            else:
+                params = []
+                for p, v in value.params.items():
+                    params.append("{}={}".format(p,v))
+
+                data[header.lower()] = "{}; {}".format(value.value, ";".join(params))
+
+        data['body'] = parsed_mime.body
+
     draft_public_id = data.get('draft_id')
     if draft_public_id is not None:
         draft = get_draft(draft_public_id, data.get('version'), g.namespace.id,

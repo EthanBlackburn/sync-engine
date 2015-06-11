@@ -121,6 +121,14 @@ def insecure_content(patch_token_manager, monkeypatch):
 
 
 @pytest.fixture
+def example_mime_message():
+    import os
+    cwd = os.path.dirname(os.path.realpath(__file__))
+    with open('{}/test.txt'.format(cwd)) as f:
+        return f.read()
+
+
+@pytest.fixture
 def example_draft(db):
     from inbox.models import Account
     account = db.session.query(Account).get(1)
@@ -434,10 +442,16 @@ def test_sending_from_email_alias(patch_smtp, api_client):
     assert parsed.headers['From'] == 'admin <prez@whitehouse.gov>'
 
 
-def test_sending_raw_mime(patch_smtp, api_client):
-    api_client.post_data('/send', 
-                            {"mime":
-                            'From: bob@foocorp.com\nTo: Space Man <president@nasa.gov>, rando@gmail.com\nSubject: Randomness\nMime-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 7bit\nSup?'})
+def test_sending_raw_mime(patch_smtp, example_mime_message, api_client):
+    message_id = api_client.get_data('/messages')[0]['id']
+    api_client.post_data('/send', {"mime": 'From: bob@foocorp.com\n'
+                                'To: Space Man <president@nasa.gov>, rando@gmail.com\n'
+                                'Subject: Randomness\n'
+                                'Mime-Version: 1.0\n'
+                                'X-Reply-To-Message-Id: {}\n'
+                                'Content-Type: text/plain; charset=UTF-8\n'
+                                'Content-Transfer-Encoding: 7bit\n'
+                                'Sup?'.format(message_id)})
 
     _, msg = patch_smtp[-1]
     parsed = mime.from_string(msg)
@@ -445,7 +459,7 @@ def test_sending_raw_mime(patch_smtp, api_client):
     assert parsed.headers['From'] == 'bob@foocorp.com'
     assert parsed.headers['Subject'] == 'Randomness'
     assert parsed.headers['To'] == 'Space Man <president@nasa.gov>, rando@gmail.com'
-    assert parsed.body == 'Sup?'
+    assert parsed.headers['In-Reply-To'] == '<CAJENXgt5t4yYJdDuV7m2DKwcDEbsY8TohVWmgmMqhnqC3pGwMw@mail.gmail.com>'
 
 
 def test_sending_from_email_multiple_aliases(patch_smtp, patch_token_manager,

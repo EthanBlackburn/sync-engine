@@ -436,25 +436,15 @@ def test_sending_from_email_alias(patch_smtp, api_client):
 
 def test_sending_raw_mime(patch_smtp, api_client):
     api_client.post_data('/send', 
-        """From: bob@foocorp.com
-            To: Space Man <president@nasa.gov>
-            Subject: Randomness
-            Mime-Version: 1.0
-            Content-Type: text/plain;
-             charset=UTF-8
-            Content-Transfer-Encoding: 7bit
-            X-Auto-Response-Suppress: All
-
-
-            Sup?
-        """)
+                            {"mime":
+                            'From: bob@foocorp.com\nTo: Space Man <president@nasa.gov>, rando@gmail.com\nSubject: Randomness\nMime-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 7bit\nSup?'})
 
     _, msg = patch_smtp[-1]
     parsed = mime.from_string(msg)
     assert 'From' in parsed.headers
     assert parsed.headers['From'] == 'bob@foocorp.com'
     assert parsed.headers['Subject'] == 'Randomness'
-    assert parsed.headers['To'] == 'Space Man <president@nasa.gov>'
+    assert parsed.headers['To'] == 'Space Man <president@nasa.gov>, rando@gmail.com'
     assert parsed.body == 'Sup?'
 
 

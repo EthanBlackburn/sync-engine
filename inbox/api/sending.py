@@ -3,7 +3,6 @@ from inbox.log import get_logger
 from inbox.api.err import err
 from inbox.models import Message
 from inbox.api.kellogs import APIEncoder
-from inbox.models.util import reconcile_message
 from inbox.models.action_log import schedule_action
 from inbox.sendmail.base import get_sendmail_client, SendMailException
 log = get_logger()
@@ -67,7 +66,6 @@ def send_raw_mime(account, db_session, raw_mime):
 
         #msg.full_body.data includes inbox headers
         sendmail_client.send_raw(msg.full_body.data)
-        reconcile_message(msg, db_session)
     except SendMailException as exc:
         kwargs = {}
         if exc.failures:

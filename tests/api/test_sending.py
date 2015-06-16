@@ -446,10 +446,11 @@ def test_sending_raw_mime(patch_smtp, api_client):
                                 'Content-Type: text/plain; charset=UTF-8\n'
                                 'Content-Transfer-Encoding: 7bit\n'
                                 'X-My-Custom-Header: Random\n\n'
-                                'Sup?'), headers={'Content-Type': 'message/rfc822'})
+                                'Yo.'), headers={'Content-Type': 'message/rfc822'})
 
     _, msg = patch_smtp[-1]
     parsed = mime.from_string(msg)
+    assert parsed.body == 'Yo.'
     assert parsed.headers['From'] == 'bob@foocorp.com'
     assert parsed.headers['Subject'] == '[go-nuts] Runtime Panic On Method Call'
     assert parsed.headers['Cc'] == 'prez@whitehouse.gov'
@@ -461,8 +462,6 @@ def test_sending_raw_mime(patch_smtp, api_client):
     assert 'X-INBOX-ID' in parsed.headers
     assert 'Message-Id' in parsed.headers
     assert 'User-Agent' in parsed.headers
-    messages = api_client.get_data('/messages?thread_id={}'.format('e6z2862swmdmyqmegz4hvzm5r'))
-    assert False, thread
 
 
 def test_sending_from_email_multiple_aliases(patch_smtp, patch_token_manager,

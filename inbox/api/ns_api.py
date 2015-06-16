@@ -19,7 +19,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from inbox.models.session import session_scope
 from inbox.models import (Message, Block, Part, Thread, Namespace,
                           Tag, Contact, Calendar, Event, Transaction)
-from inbox.api.sending import send_draft
+from inbox.api.sending import send_draft, send_raw_mime
 from inbox.api.kellogs import APIEncoder
 from inbox.api import filtering
 from inbox.api.validation import (get_tags, get_attachments, get_calendar,
@@ -1058,46 +1058,13 @@ def draft_delete_api(public_id):
 
 @app.route('/send', methods=['POST'])
 def draft_send_api():
+    if request.content_type == "message/rfc822":
+        return send_raw_mime(g.namespace.account, g.db_session, request.data)
+        
     data = request.get_json(force=True)
-    if 'mime' in data:
-        if len(data) == 1:
-            mime_string = str(data['mime'])
-            data = {}
-            parsed_mime = mime.from_string(mime_string)
-            for header, value in parsed_mime.headers.items():
-                if header == 'X-Reply-To-Message-Id':
-                    data['reply_to_message_id'] = value
-
-                elif header == 'X-Thread-Id':
-                    data['thread_id'] = value
-
-                elif header in ['To', 'From']:
-                    email_list = value.split(',')
-                    email_regex = re.compile(r'[\w\.-]+@[\w\.-]+')
-                    data[header.lower()] = []
-                    for e in email_list:
-                        email_match = re.findall(email_regex, e)
-                        name = ''
-                        if e.find('<') != -1:
-                            name = e[: e.find('<')].strip()
-                        data[header.lower()].append({'name': name, 'email':
-                                                     email_match[0] if email_match
-                                                                         else ''})
-                elif isinstance(value, basestring):
-                    data[header.lower()] = value
-
-                else:
-                    params = []
-                    for p, v in value.params.items():
-                        params.append("{}={}".format(p, v))
-
-                    data[header.lower()] = "{}; {}".format(value.value,
-                                                                 ";".join(params))
-
-            data['body'] = parsed_mime.body
 
     draft_public_id = data.get('draft_id')
-    
+
     if draft_public_id is not None:
         draft = get_draft(draft_public_id, data.get('version'), g.namespace.id,
                           g.db_session)

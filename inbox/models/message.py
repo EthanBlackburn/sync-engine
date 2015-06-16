@@ -1,5 +1,6 @@
 import datetime
 import itertools
+import pkg_resources
 from hashlib import sha256
 from flanker import mime
 from collections import defaultdict
@@ -11,7 +12,7 @@ from sqlalchemy.orm import relationship, backref, validates
 from sqlalchemy.sql.expression import false
 
 from inbox.util.html import plaintext2html, strip_tags
-from inbox.sqlalchemy_ext.util import JSON, json_field_too_long
+from inbox.sqlalchemy_ext.util import JSON, json_field_too_long, generate_public_id
 
 from inbox.util.addr import parse_mimepart_address_header
 from inbox.util.misc import parse_references, get_internaldate
@@ -21,9 +22,10 @@ from inbox.models.base import MailSyncBase
 from inbox.models.namespace import Namespace
 from inbox.security.blobstorage import encode_blob, decode_blob
 
-
 from inbox.log import get_logger
 log = get_logger()
+
+VERSION = pkg_resources.get_distribution('inbox-sync').version
 
 
 def _trim_filename(s, mid, max_len=64):
@@ -139,6 +141,41 @@ class Message(MailSyncBase, HasRevisions, HasPublicID):
             value = value[:255]
         value = value.replace('\0', '')
         return value
+
+    @classmethod
+    def create_from_mime(cls, account, mid, folder_name, received_date,
+                        body_string):
+        our_uid = generate_public_id()  # base-36 encoded string
+
+        new_headers = ('\nX-INBOX-ID: {0}-0\n'
+                    'Message-Id: <{0}-0@mailer.nylas.com>\n'
+                    'User-Agent: NylasMailer/{1}').format(our_uid, VERSION)
+
+        loc = body_string.find('\n\n')
+        if loc != -1:
+            new_body = body_string[:loc] + new_headers + body_string[loc:]
+        else:
+            new_body = body_string + new_headers
+
+        msg = cls.create_from_synced(account, mid, folder_name, received_date,
+                                new_body)
+
+        if msg.references is not None:
+            msg.is_reply = True
+
+        thread_cls = account.thread_cls
+        msg.thread = thread_cls(
+            subject=msg.subject,
+            recentdate=msg.received_date,
+            namespace=account.namespace,
+            subjectdate=msg.received_date)
+
+        msg.is_created = True
+        msg.is_sent = True
+        msg.is_draft = False
+
+        return msg
+
 
     @classmethod
     def create_from_synced(cls, account, mid, folder_name, received_date,

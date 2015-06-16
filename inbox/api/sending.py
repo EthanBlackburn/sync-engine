@@ -1,7 +1,9 @@
 from datetime import datetime
 from inbox.log import get_logger
 from inbox.api.err import err
+from inbox.models import Message
 from inbox.api.kellogs import APIEncoder
+from inbox.models.util import reconcile_message
 from inbox.models.action_log import schedule_action
 from inbox.sendmail.base import get_sendmail_client, SendMailException
 log = get_logger()
@@ -51,3 +53,36 @@ def send_draft(account, draft, db_session, schedule_remote_delete):
         log.error('Error in post-send processing', error=e, exc_info=True)
 
     return APIEncoder().jsonify(draft)
+
+
+def send_raw_mime(account, db_session, raw_mime):
+    try:
+        msg = Message.create_from_mime(account, '', account.sent_folder,
+                                        datetime.utcnow(), raw_mime)
+
+        db_session.add(msg)
+        db_session.commit()
+
+        sendmail_client = get_sendmail_client(account)
+
+        #msg.full_body.data includes inbox headers
+        sendmail_client.send_raw(msg.full_body.data)
+        reconcile_message(msg, db_session)
+    except SendMailException as exc:
+        kwargs = {}
+        if exc.failures:
+            kwargs['failures'] = exc.failures
+        if exc.server_error:
+            kwargs['server_error'] = exc.server_error
+        return err(exc.http_code, exc.message, **kwargs)
+
+    try:
+        if account.provider == 'icloud':
+            # Special case because iCloud doesn't save sent messages.
+            schedule_action('save_sent_email', msg, msg.namespace.id,
+                            db_session)
+
+    except Exception as e:
+        log.error('Error in post-send processing', error=e, exc_info=True)
+
+    return raw_mime

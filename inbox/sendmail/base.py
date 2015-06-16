@@ -68,6 +68,7 @@ def create_draft(data, namespace, db_session, syncback):
         raise InputError('"body" should be a string')
     tags = get_tags(data.get('tags'), namespace.id, db_session)
     blocks = get_attachments(data.get('file_ids'), namespace.id, db_session)
+
     reply_to_thread = get_thread(data.get('thread_id'), namespace.id,
                                  db_session)
     reply_to_message = get_message(data.get('reply_to_message_id'),

@@ -436,27 +436,38 @@ def test_sending_from_email_alias(patch_smtp, api_client):
 
 def test_sending_raw_mime(patch_smtp, api_client):
     api_client.post_raw('/send', ('From: bob@foocorp.com\n'
-                                'To: golang-nuts <golang-nuts@googlegroups.com>\n'
-                                'Cc: prez@whitehouse.gov\n'
-                                'Bcc: Some Guy <masterchief@halo.com>\n'
-                                'Subject: [go-nuts] Runtime Panic On Method Call\n'
-                                'Mime-Version: 1.0\n'
-                                'In-Reply-To: <78pgxboai332pi9p2smo4db73-0@mailer.nylas.com>\n'
-                                'References: <78pgxboai332pi9p2smo4db73-0@mailer.nylas.com>\n'
-                                'Content-Type: text/plain; charset=UTF-8\n'
-                                'Content-Transfer-Encoding: 7bit\n'
-                                'X-My-Custom-Header: Random\n\n'
-                                'Yo.'), headers={'Content-Type': 'message/rfc822'})
+                                    'To: golang-nuts '
+                                    '<golang-nuts@googlegroups.com>\n'
+                                    'Cc: prez@whitehouse.gov\n'
+                                    'Bcc: Some Guy <masterchief@halo.com>\n'
+                                    'Subject: '
+                                    '[go-nuts] Runtime Panic On Method Call\n'
+                                    'Mime-Version: 1.0\n'
+                                    'In-Reply-To: '
+                                    '<78pgxboai332pi9p2smo4db73-0'
+                                    '@mailer.nylas.com>\n'
+                                    'References: '
+                                    '<78pgxboai332pi9p2smo4db73-0'
+                                    '@mailer.nylas.com>\n'
+                                    'Content-Type: text/plain; charset=UTF-8\n'
+                                    'Content-Transfer-Encoding: 7bit\n'
+                                    'X-My-Custom-Header: Random\n\n'
+                                    'Yo.'), headers={'Content-Type':
+                                                        'message/rfc822'})
 
     _, msg = patch_smtp[-1]
     parsed = mime.from_string(msg)
     assert parsed.body == 'Yo.'
     assert parsed.headers['From'] == 'bob@foocorp.com'
-    assert parsed.headers['Subject'] == '[go-nuts] Runtime Panic On Method Call'
+    assert parsed.headers['Subject'] == \
+                            '[go-nuts] Runtime Panic On Method Call'
     assert parsed.headers['Cc'] == 'prez@whitehouse.gov'
-    assert parsed.headers['To'] == 'golang-nuts <golang-nuts@googlegroups.com>'
-    assert parsed.headers['In-Reply-To'] == '<78pgxboai332pi9p2smo4db73-0@mailer.nylas.com>'
-    assert parsed.headers['References'] == '<78pgxboai332pi9p2smo4db73-0@mailer.nylas.com>'
+    assert parsed.headers['To'] == \
+                            'golang-nuts <golang-nuts@googlegroups.com>'
+    assert parsed.headers['In-Reply-To'] == \
+                            '<78pgxboai332pi9p2smo4db73-0@mailer.nylas.com>'
+    assert parsed.headers['References'] == \
+                            '<78pgxboai332pi9p2smo4db73-0@mailer.nylas.com>'
     assert parsed.headers['X-My-Custom-Header'] == 'Random'
     assert 'Bcc' not in parsed.headers
     assert 'X-INBOX-ID' in parsed.headers

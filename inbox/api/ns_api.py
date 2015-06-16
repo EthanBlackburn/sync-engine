@@ -3,13 +3,12 @@ import base64
 import email.header
 import uuid
 import gevent
-import re
 import time
 from datetime import datetime
 
 from inbox.models.session import session_scope
 
-from flanker import mime
+
 from flask import request, g, Blueprint, make_response, Response
 from flask import jsonify as flask_jsonify
 from flask.ext.restful import reqparse
@@ -1060,11 +1059,9 @@ def draft_delete_api(public_id):
 def draft_send_api():
     if request.content_type == "message/rfc822":
         return send_raw_mime(g.namespace.account, g.db_session, request.data)
-        
+
     data = request.get_json(force=True)
-
     draft_public_id = data.get('draft_id')
-
     if draft_public_id is not None:
         draft = get_draft(draft_public_id, data.get('version'), g.namespace.id,
                           g.db_session)

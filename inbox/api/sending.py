@@ -64,7 +64,7 @@ def send_raw_mime(account, db_session, raw_mime):
 
         sendmail_client = get_sendmail_client(account)
 
-        #msg.full_body.data includes inbox headers
+        # msg.full_body.data includes inbox headers
         sendmail_client.send_raw(msg.full_body.data)
     except SendMailException as exc:
         kwargs = {}

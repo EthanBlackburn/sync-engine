@@ -12,7 +12,8 @@ from sqlalchemy.orm import relationship, backref, validates
 from sqlalchemy.sql.expression import false
 
 from inbox.util.html import plaintext2html, strip_tags
-from inbox.sqlalchemy_ext.util import JSON, json_field_too_long, generate_public_id
+from inbox.sqlalchemy_ext.util import (JSON, json_field_too_long,
+                                        generate_public_id)
 
 from inbox.util.addr import parse_mimepart_address_header
 from inbox.util.misc import parse_references, get_internaldate
@@ -144,12 +145,12 @@ class Message(MailSyncBase, HasRevisions, HasPublicID):
 
     @classmethod
     def create_from_mime(cls, account, mid, folder_name, received_date,
-                        body_string):
+                            body_string):
         our_uid = generate_public_id()  # base-36 encoded string
-
         new_headers = ('\nX-INBOX-ID: {0}-0\n'
-                    'Message-Id: <{0}-0@mailer.nylas.com>\n'
-                    'User-Agent: NylasMailer/{1}').format(our_uid, VERSION)
+                        'Message-Id: <{0}-0@mailer.nylas.com>\n'
+                        'User-Agent: NylasMailer/{1}').format(our_uid,
+                                                                VERSION)
 
         loc = body_string.find('\n\n')
         if loc != -1:
@@ -158,7 +159,7 @@ class Message(MailSyncBase, HasRevisions, HasPublicID):
             new_body = body_string + new_headers
 
         msg = cls.create_from_synced(account, mid, folder_name, received_date,
-                                new_body)
+                                        new_body)
 
         if msg.references is not None:
             msg.is_reply = True
@@ -175,7 +176,6 @@ class Message(MailSyncBase, HasRevisions, HasPublicID):
         msg.is_draft = False
 
         return msg
-
 
     @classmethod
     def create_from_synced(cls, account, mid, folder_name, received_date,

@@ -57,8 +57,8 @@ def create_message_from_mime(account, raw_mime, db_session):
 
     with db_session.no_autoflush:
         msg = Message.create_from_synced(account, '', account.sent_folder,
-                                        datetime.utcnow(), new_body)
-       
+                                                  datetime.utcnow(), new_body)
+
         # create_from_synced converts the message body to html, so we set it
         # back to the original body here for consistency.
         original_body = mime.from_string(raw_mime)
@@ -67,13 +67,13 @@ def create_message_from_mime(account, raw_mime, db_session):
         if original_body.subject is not None and not \
                                 isinstance(original_body.subject, basestring):
             raise InputError('"subject" should be a string')
-            
+
         if not isinstance(original_body.body, basestring):
             raise InputError('"body" should be a string')
-    
+
         if not original_body.headers['To'] or not \
-                                isinstance(original_body.headers['To'], 
-                                                                basestring):
+                                isinstance(original_body.headers['To'],
+                                                                  basestring):
             raise InputError("No recipients specified")
 
         if msg.references is not None:

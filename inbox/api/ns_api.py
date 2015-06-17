@@ -1059,7 +1059,8 @@ def draft_delete_api(public_id):
 @app.route('/send', methods=['POST'])
 def draft_send_api():
     if request.content_type == "message/rfc822":
-        msg = create_message_from_mime(g.namespace.account, request.data, g.db_session)
+        msg = create_message_from_mime(g.namespace.account, request.data,
+                                                                 g.db_session)
         resp = send_raw_mime(g.namespace.account, g.db_session, msg)
         if resp.status_code == 200:
             # At this point, the message has been successfully sent. If there's

@@ -477,15 +477,17 @@ def test_sending_raw_mime(patch_smtp, api_client):
 
 def test_sending_bad_raw_mime(patch_smtp, api_client):
     res = api_client.post_raw('/send', ('From: bob@foocorp.com\n'
-                                    'To: \n'
-                                    'Subject: '
-                                    '[go-nuts] Runtime Panic On Method Call\n'
-                                    'Mime-Version: 1.0\n'
-                                    'Content-Type: text/plain; charset=UTF-8\n'
-                                    'Content-Transfer-Encoding: 7bit\n'
-                                    'X-My-Custom-Header: Random\n\n'
-                                    'Yo.'), headers={'Content-Type':
-                                                        'message/rfc822'})
+                                        'To: \n'
+                                        'Subject: '
+                                        '[go-nuts] Runtime Panic On Method '
+                                                                      'Call\n'
+                                        'Mime-Version: 1.0\n'
+                                        'Content-Type: '
+                                                'text/plain; charset=UTF-8\n'
+                                        'Content-Transfer-Encoding: 7bit\n'
+                                            'X-My-Custom-Header: Random\n\n'
+                                        'Yo.'), headers={'Content-Type':
+                                                            'message/rfc822'})
 
     assert res.status_code == 400
 

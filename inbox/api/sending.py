@@ -1,7 +1,6 @@
 from datetime import datetime
 from inbox.log import get_logger
 from inbox.api.err import err
-from inbox.models import Message
 from inbox.api.kellogs import APIEncoder
 from inbox.models.action_log import schedule_action
 from inbox.sendmail.base import get_sendmail_client, SendMailException

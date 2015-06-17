@@ -1,6 +1,5 @@
 import datetime
 import itertools
-import pkg_resources
 from hashlib import sha256
 from flanker import mime
 from collections import defaultdict
@@ -21,6 +20,7 @@ from inbox.models.mixins import HasPublicID, HasRevisions
 from inbox.models.base import MailSyncBase
 from inbox.models.namespace import Namespace
 from inbox.security.blobstorage import encode_blob, decode_blob
+
 
 from inbox.log import get_logger
 log = get_logger()

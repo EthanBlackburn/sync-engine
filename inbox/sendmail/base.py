@@ -1,5 +1,7 @@
+import pkg_resources
 from datetime import datetime
 
+from flanker import mime
 from inbox.api.validation import (
     get_recipients, get_tags, get_attachments, get_thread, get_message)
 from inbox.api.err import InputError
@@ -7,6 +9,9 @@ from inbox.contacts.process_mail import update_contacts_from_message
 from inbox.models import Message, Part
 from inbox.models.action_log import schedule_action
 from inbox.sqlalchemy_ext.util import generate_public_id
+
+
+VERSION = pkg_resources.get_distribution('inbox-sync').version
 
 
 class SendMailException(Exception):
@@ -40,6 +45,52 @@ def get_sendmail_client(account):
     sendmail_cls = getattr(sendmail_mod, sendmail_mod.SENDMAIL_CLS)
     sendmail_client = sendmail_cls(account)
     return sendmail_client
+
+
+def create_message_from_mime(account, raw_mime, db_session):
+    our_uid = generate_public_id()  # base-36 encoded string
+    new_headers = ('X-INBOX-ID: {0}-0\n'
+                    'Message-Id: <{0}-0@mailer.nylas.com>\n'
+                    'User-Agent: NylasMailer/{1}\n').format(our_uid,
+                                                            VERSION)
+    new_body = new_headers + raw_mime
+
+    with db_session.no_autoflush:
+        msg = Message.create_from_synced(account, '', account.sent_folder,
+                                        datetime.utcnow(), new_body)
+       
+        # create_from_synced converts the message body to html, so we set it
+        # back to the original body here for consistency.
+        original_body = mime.from_string(raw_mime)
+        msg.body = original_body.body.strip()
+
+        if original_body.subject is not None and not \
+                                isinstance(original_body.subject, basestring):
+            raise InputError('"subject" should be a string')
+            
+        if not isinstance(original_body.body, basestring):
+            raise InputError('"body" should be a string')
+    
+        if not original_body.headers['To'] or not \
+                                isinstance(original_body.headers['To'], 
+                                                                basestring):
+            raise InputError("No recipients specified")
+
+        if msg.references is not None:
+            msg.is_reply = True
+
+        thread_cls = account.thread_cls
+        msg.thread = thread_cls(
+            subject=msg.subject,
+            recentdate=msg.received_date,
+            namespace=account.namespace,
+            subjectdate=msg.received_date)
+
+        msg.is_created = True
+        msg.is_sent = True
+        msg.is_draft = False
+
+        return msg
 
 
 def create_draft(data, namespace, db_session, syncback):

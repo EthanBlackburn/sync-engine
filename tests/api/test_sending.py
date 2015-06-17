@@ -475,6 +475,21 @@ def test_sending_raw_mime(patch_smtp, api_client):
     assert 'User-Agent' in parsed.headers
 
 
+def test_sending_bad_raw_mime(patch_smtp, api_client):
+    res = api_client.post_raw('/send', ('From: bob@foocorp.com\n'
+                                    'To: \n'
+                                    'Subject: '
+                                    '[go-nuts] Runtime Panic On Method Call\n'
+                                    'Mime-Version: 1.0\n'
+                                    'Content-Type: text/plain; charset=UTF-8\n'
+                                    'Content-Transfer-Encoding: 7bit\n'
+                                    'X-My-Custom-Header: Random\n\n'
+                                    'Yo.'), headers={'Content-Type':
+                                                        'message/rfc822'})
+
+    assert res.status_code == 400
+
+
 def test_sending_from_email_multiple_aliases(patch_smtp, patch_token_manager,
                                              api_client):
     res = api_client.post_data('/send',

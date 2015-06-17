@@ -405,6 +405,7 @@ class SMTPClient(object):
         from_addr = parse_mimepart_address_header(parsed, "To")
         recipient_emails = [email for name, email in itertools.chain(
             bcc, cc, to)]
+
         msg = re.sub(r'Bcc: [^\n]*\n', '', raw_mime)
         self._send(recipient_emails, msg)
 

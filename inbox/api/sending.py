@@ -54,14 +54,8 @@ def send_draft(account, draft, db_session, schedule_remote_delete):
     return APIEncoder().jsonify(draft)
 
 
-def send_raw_mime(account, db_session, raw_mime):
+def send_raw_mime(account, db_session, msg):
     try:
-        msg = Message.create_from_mime(account, '', account.sent_folder,
-                                        datetime.utcnow(), raw_mime)
-
-        db_session.add(msg)
-        db_session.commit()
-
         sendmail_client = get_sendmail_client(account)
 
         # msg.full_body.data includes inbox headers
@@ -83,4 +77,4 @@ def send_raw_mime(account, db_session, raw_mime):
     except Exception as e:
         log.error('Error in post-send processing', error=e, exc_info=True)
 
-    return raw_mime
+    return APIEncoder().jsonify(msg)

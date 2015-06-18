@@ -1,7 +1,6 @@
 import pkg_resources
 from datetime import datetime
 
-from flanker import mime
 from inbox.api.validation import (
     get_recipients, get_tags, get_attachments, get_thread, get_message)
 from inbox.api.err import InputError
@@ -47,11 +46,11 @@ def get_sendmail_client(account):
     return sendmail_client
 
 
-def create_message_from_mime(account, raw_mime, db_session):
+def create_draft_from_mime(account, raw_mime, db_session):
     our_uid = generate_public_id()  # base-36 encoded string
-    new_headers = ('X-INBOX-ID: {0}-0\n'
-                    'Message-Id: <{0}-0@mailer.nylas.com>\n'
-                    'User-Agent: NylasMailer/{1}\n').format(our_uid,
+    new_headers = ('X-INBOX-ID: {0}-0\r\n'
+                    'Message-Id: <{0}-0@mailer.nylas.com>\r\n'
+                    'User-Agent: NylasMailer/{1}\r\n').format(our_uid,
                                                             VERSION)
     new_body = new_headers + raw_mime
 
@@ -59,24 +58,19 @@ def create_message_from_mime(account, raw_mime, db_session):
         msg = Message.create_from_synced(account, '', account.sent_folder,
                                                   datetime.utcnow(), new_body)
 
-        # create_from_synced converts the message body to html, so we set it
-        # back to the original body here for consistency.
-        original_body = mime.from_string(raw_mime)
-        msg.body = original_body.body.strip()
+        if msg.from_addr and len(msg.from_addr) > 1:
+            raise InputError("from_addr field can have at most one item")
+        if msg.reply_to and len(msg.reply_to) > 1:
+            raise InputError("reply_to field can have at most one item")
 
-        if original_body.subject is not None and not \
-                                isinstance(original_body.subject, basestring):
+        if msg.subject is not None and not \
+                                        isinstance(msg.subject, basestring):
             raise InputError('"subject" should be a string')
 
-        if not isinstance(original_body.body, basestring):
+        if not isinstance(msg.body, basestring):
             raise InputError('"body" should be a string')
 
-        if not original_body.headers['To'] or not \
-                                isinstance(original_body.headers['To'],
-                                                                  basestring):
-            raise InputError("No recipients specified")
-
-        if msg.references is not None:
+        if msg.references or msg.in_reply_to:
             msg.is_reply = True
 
         thread_cls = account.thread_cls
@@ -85,10 +79,14 @@ def create_message_from_mime(account, raw_mime, db_session):
             recentdate=msg.received_date,
             namespace=account.namespace,
             subjectdate=msg.received_date)
+        if msg.attachments:
+                attachment_tag = namespace.tags['attachment']
+                msg.thread.apply_tag(attachment_tag)
 
         msg.is_created = True
         msg.is_sent = True
         msg.is_draft = False
+        msg.read = True
 
         return msg
 

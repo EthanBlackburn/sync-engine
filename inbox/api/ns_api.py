@@ -32,7 +32,7 @@ from inbox.api.validation import (get_tags, get_attachments, get_calendar,
                                   valid_delta_object_types)
 import inbox.contacts.crud
 from inbox.sendmail.base import (create_draft, update_draft, delete_draft,
-                                    create_message_from_mime)
+                                    create_draft_from_mime)
 from inbox.log import get_logger
 from inbox.models.constants import MAX_INDEXABLE_LENGTH
 from inbox.models.action_log import schedule_action, ActionError
@@ -1059,8 +1059,9 @@ def draft_delete_api(public_id):
 @app.route('/send', methods=['POST'])
 def draft_send_api():
     if request.content_type == "message/rfc822":
-        msg = create_message_from_mime(g.namespace.account, request.data,
+        msg = create_draft_from_mime(g.namespace.account, request.data,
                                                                  g.db_session)
+        validate_draft_recipients(msg)
         resp = send_raw_mime(g.namespace.account, g.db_session, msg)
         if resp.status_code == 200:
             # At this point, the message has been successfully sent. If there's

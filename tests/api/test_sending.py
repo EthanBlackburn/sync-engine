@@ -435,23 +435,23 @@ def test_sending_from_email_alias(patch_smtp, api_client):
 
 
 def test_sending_raw_mime(patch_smtp, api_client):
-    api_client.post_raw('/send', ('From: bob@foocorp.com\n'
+    api_client.post_raw('/send', ('From: bob@foocorp.com\r\n'
                                     'To: golang-nuts '
-                                    '<golang-nuts@googlegroups.com>\n'
-                                    'Cc: prez@whitehouse.gov\n'
-                                    'Bcc: Some Guy <masterchief@halo.com>\n'
+                                    '<golang-nuts@googlegroups.com>\r\n'
+                                    'Cc: prez@whitehouse.gov\r\n'
+                                    'Bcc: Some Guy <masterchief@halo.com>\r\n'
                                     'Subject: '
-                                    '[go-nuts] Runtime Panic On Method Call\n'
-                                    'Mime-Version: 1.0\n'
+                                    '[go-nuts] Runtime Panic On Method Call\r\n'
+                                    'Mime-Version: 1.0\r\n'
                                     'In-Reply-To: '
                                     '<78pgxboai332pi9p2smo4db73-0'
-                                    '@mailer.nylas.com>\n'
+                                    '@mailer.nylas.com>\r\n'
                                     'References: '
                                     '<78pgxboai332pi9p2smo4db73-0'
-                                    '@mailer.nylas.com>\n'
-                                    'Content-Type: text/plain; charset=UTF-8\n'
-                                    'Content-Transfer-Encoding: 7bit\n'
-                                    'X-My-Custom-Header: Random\n\n'
+                                    '@mailer.nylas.com>\r\n'
+                                    'Content-Type: text/plain; charset=UTF-8\r\n'
+                                    'Content-Transfer-Encoding: 7bit\r\n'
+                                    'X-My-Custom-Header: Random\r\n\r\n'
                                     'Yo.'), headers={'Content-Type':
                                                         'message/rfc822'})
 
@@ -476,16 +476,16 @@ def test_sending_raw_mime(patch_smtp, api_client):
 
 
 def test_sending_bad_raw_mime(patch_smtp, api_client):
-    res = api_client.post_raw('/send', ('From: bob@foocorp.com\n'
-                                        'To: \n'
+    res = api_client.post_raw('/send', ('From: bob@foocorp.com\r\n'
+                                        'To: \r\n'
                                         'Subject: '
                                         '[go-nuts] Runtime Panic On Method '
-                                                                      'Call\n'
-                                        'Mime-Version: 1.0\n'
+                                                                      'Call\r\n'
+                                        'Mime-Version: 1.0\r\n'
                                         'Content-Type: '
-                                                'text/plain; charset=UTF-8\n'
-                                        'Content-Transfer-Encoding: 7bit\n'
-                                            'X-My-Custom-Header: Random\n\n'
+                                                'text/plain; charset=UTF-8\r\n'
+                                        'Content-Transfer-Encoding: 7bit\r\n'
+                                            'X-My-Custom-Header: Random\r\n\r\n'
                                         'Yo.'), headers={'Content-Type':
                                                             'message/rfc822'})
 

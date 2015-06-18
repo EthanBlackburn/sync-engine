@@ -9,7 +9,6 @@ import smtplib
 
 import requests
 
-from flanker import mime
 from inbox.log import get_logger
 from inbox.models.session import session_scope
 from inbox.models.backends.imap import ImapAccount
@@ -397,16 +396,8 @@ class SMTPClient(object):
         self.log.info('Sending successful', sender=from_addr[1],
                       recipients=recipient_emails)
 
-    def send_raw(self, raw_mime):
-        parsed = mime.from_string(raw_mime)
-        bcc = parse_mimepart_address_header(parsed, "Bcc")
-        cc = parse_mimepart_address_header(parsed, "Cc")
-        to = parse_mimepart_address_header(parsed, "To")
-        from_addr = parse_mimepart_address_header(parsed, "To")
-        recipient_emails = [email for name, email in itertools.chain(
-            bcc, cc, to)]
-
-        msg = re.sub(r'Bcc: [^\n]*\n', '', raw_mime)
+    def send_raw(self, from_addr, raw_mime, recipient_emails):
+        msg = re.sub(r'Bcc: [^\r\n]*\r\n', '', raw_mime)
         self._send(recipient_emails, msg)
 
         # Sent to all successfully

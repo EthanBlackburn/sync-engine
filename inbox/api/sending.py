@@ -58,10 +58,11 @@ def send_raw_mime(account, db_session, msg):
     try:
         sendmail_client = get_sendmail_client(account)
         recipient_emails = [email for name, email in itertools.chain(
-            msg.bcc_addr, msg.cc_addr, msg.from_addr)]
+            msg.bcc_addr, msg.cc_addr, msg.to_addr)]
 
         # msg.full_body.data includes inbox headers
-        sendmail_client.send_raw(msg.from_addr, msg.full_body.data, recipient_emails)
+        sendmail_client.send_raw(msg.from_addr, msg.full_body.data,
+                                                            recipient_emails)
     except SendMailException as exc:
         kwargs = {}
         if exc.failures:

@@ -51,7 +51,7 @@ def create_draft_from_mime(account, raw_mime, db_session):
     new_headers = ('X-INBOX-ID: {0}-0\r\n'
                     'Message-Id: <{0}-0@mailer.nylas.com>\r\n'
                     'User-Agent: NylasMailer/{1}\r\n').format(our_uid,
-                                                            VERSION)
+                                                                    VERSION)
     new_body = new_headers + raw_mime
 
     with db_session.no_autoflush:
@@ -80,7 +80,7 @@ def create_draft_from_mime(account, raw_mime, db_session):
             namespace=account.namespace,
             subjectdate=msg.received_date)
         if msg.attachments:
-                attachment_tag = namespace.tags['attachment']
+                attachment_tag = account.namespace.tags['attachment']
                 msg.thread.apply_tag(attachment_tag)
 
         msg.is_created = True

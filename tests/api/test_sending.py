@@ -441,7 +441,8 @@ def test_sending_raw_mime(patch_smtp, api_client):
                                     'Cc: prez@whitehouse.gov\r\n'
                                     'Bcc: Some Guy <masterchief@halo.com>\r\n'
                                     'Subject: '
-                                    '[go-nuts] Runtime Panic On Method Call\r\n'
+                                    '[go-nuts] Runtime Panic On Method Call'
+                                    '\r\n'
                                     'Mime-Version: 1.0\r\n'
                                     'In-Reply-To: '
                                     '<78pgxboai332pi9p2smo4db73-0'
@@ -449,7 +450,8 @@ def test_sending_raw_mime(patch_smtp, api_client):
                                     'References: '
                                     '<78pgxboai332pi9p2smo4db73-0'
                                     '@mailer.nylas.com>\r\n'
-                                    'Content-Type: text/plain; charset=UTF-8\r\n'
+                                    'Content-Type: text/plain; charset=UTF-8'
+                                    '\r\n'
                                     'Content-Transfer-Encoding: 7bit\r\n'
                                     'X-My-Custom-Header: Random\r\n\r\n'
                                     'Yo.'), headers={'Content-Type':
@@ -479,13 +481,14 @@ def test_sending_bad_raw_mime(patch_smtp, api_client):
     res = api_client.post_raw('/send', ('From: bob@foocorp.com\r\n'
                                         'To: \r\n'
                                         'Subject: '
-                                        '[go-nuts] Runtime Panic On Method '
-                                                                      'Call\r\n'
+                                        '[go-nuts] Runtime Panic On Method'
+                                        'Call \r\n'
                                         'Mime-Version: 1.0\r\n'
                                         'Content-Type: '
-                                                'text/plain; charset=UTF-8\r\n'
+                                        'text/plain; charset=UTF-8\r\n'
                                         'Content-Transfer-Encoding: 7bit\r\n'
-                                            'X-My-Custom-Header: Random\r\n\r\n'
+                                        'X-My-Custom-Header: Random'
+                                        '\r\n\r\n'
                                         'Yo.'), headers={'Content-Type':
                                                             'message/rfc822'})
 

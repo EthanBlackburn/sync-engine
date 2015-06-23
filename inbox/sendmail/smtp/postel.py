@@ -403,7 +403,8 @@ class SMTPClient(object):
         self._send(recipient_emails, mime_body)
 
         # Sent to all successfully
-        self.log.info('Sending successful', sender=msg.from_addr[1],
+        sender_email = msg.from_addr[0][1]
+        self.log.info('Sending successful', sender=sender_email,
                       recipients=recipient_emails)
 
     def _get_connection(self):

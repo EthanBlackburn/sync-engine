@@ -6,8 +6,6 @@ import gevent
 import time
 from datetime import datetime
 
-from inbox.models.session import session_scope
-
 
 from flask import request, g, Blueprint, make_response, Response
 from flask import jsonify as flask_jsonify

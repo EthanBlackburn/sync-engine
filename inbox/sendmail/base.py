@@ -86,7 +86,7 @@ def create_draft_from_mime(account, raw_mime, db_session):
         msg.is_created = True
         msg.is_sent = True
         msg.is_draft = False
-        msg.read = True
+        msg.is_read = True
 
         return msg
 

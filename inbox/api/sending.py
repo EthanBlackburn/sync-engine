@@ -1,4 +1,3 @@
-import itertools
 from datetime import datetime
 from inbox.log import get_logger
 from inbox.api.err import err
@@ -57,15 +56,8 @@ def send_draft(account, draft, db_session, schedule_remote_delete):
 def send_raw_mime(account, db_session, msg):
     try:
         sendmail_client = get_sendmail_client(account)
-        recipient_emails = [email for name, email in itertools.chain(
-            msg.bcc_addr, msg.cc_addr, msg.to_addr)]
+        sendmail_client.send_raw(msg)
 
-        if account.provider == 'eas':
-            sendmail_client.send_raw(msg.from_addr, msg.full_body.data,
-                                                    inbox_uid=msg.inbox_uid)
-        else:
-            sendmail_client.send_raw(msg.from_addr, msg.full_body.data,
-                                            recipient_emails=recipient_emails)
     except SendMailException as exc:
         kwargs = {}
         if exc.failures:

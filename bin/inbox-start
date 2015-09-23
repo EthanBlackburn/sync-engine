@@ -29,10 +29,6 @@ from inbox.mailsync.service import SyncService
 
 sync_service = None
 
-# Set a default timeout for sockets.
-SOCKET_TIMEOUT = 2 * 60
-socket.setdefaulttimeout(SOCKET_TIMEOUT)
-
 
 def signal_handler(signum, frame):
     print 'Signal handler called with signal', signum

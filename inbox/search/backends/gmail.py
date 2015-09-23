@@ -21,13 +21,8 @@ class GmailSearchClient(IMAPSearchClient):
     def _search_folder(self, db_session, folder, search_query):
         self.crispin_client.select_folder(folder.name, uidvalidity_cb)
         try:
-            try:
-                query = search_query.encode('ascii')
-                matching_uids = self.crispin_client.conn.gmail_search(query)
-            except UnicodeEncodeError:
-                matching_uids = \
-                    self.crispin_client.conn.gmail_search(search_query,
-                                                          charset="UTF-8")
+            matching_uids = self.crispin_client.conn.gmail_search(search_query)
+
         except Exception as e:
             self.log.debug('Search error', error=e)
             raise

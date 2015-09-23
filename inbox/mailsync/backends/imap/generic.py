@@ -63,7 +63,7 @@ sessions reduce scalability.
 from __future__ import division
 
 from datetime import datetime, timedelta
-from gevent import Greenlet, kill, spawn, sleep
+from gevent import Greenlet, kill, spawn, sleep, getcurrent
 import imaplib
 from sqlalchemy import func
 from sqlalchemy.orm import load_only
@@ -244,7 +244,13 @@ class FolderSyncEngine(Greenlet):
 
     def _report_initial_sync_end(self):
         with session_scope() as db_session:
-            q = db_session.query(Folder).get(self.folder_id)
+            # Fails here
+            import pdb;pdb.set_trace()
+            try:
+                q = db_session.query(Folder).get(self.folder_id)
+            except Exception as e:
+                import pdb;pdb.set_trace()
+                print e
             q.initial_sync_end = datetime.utcnow()
 
     @retry_crispin
@@ -342,7 +348,7 @@ class FolderSyncEngine(Greenlet):
             )
         return self._should_idle
 
-    def poll_impl(self):
+    def poll_impl(self, debug=False):
         with self.conn_pool.get() as crispin_client:
             self.check_uid_changes(crispin_client)
             if self.should_idle(crispin_client):
@@ -350,7 +356,7 @@ class FolderSyncEngine(Greenlet):
                                              self.uidvalidity_cb)
                 idling = True
                 try:
-                    crispin_client.idle(IDLE_WAIT)
+                    crispin_client.idle(IDLE_WAIT, debug=debug)
                 except Exception as exc:
                     # With some servers we get e.g.
                     # 'Unexpected IDLE response: * FLAGS  (...)'
@@ -405,7 +411,7 @@ class FolderSyncEngine(Greenlet):
         log.new(account_id=self.account_id, folder=self.folder_name)
         while True:
             log.info('polling for changes')
-            self.poll_impl()
+            self.poll_impl(debug=True)
 
     def create_message(self, db_session, acct, folder, msg):
         assert acct is not None and acct.namespace is not None
@@ -582,7 +588,7 @@ class FolderSyncEngine(Greenlet):
                 self.download_and_commit_uids(crispin_client, [uid])
         self.uidnext = remote_uidnext
 
-    def condstore_refresh_flags(self, crispin_client):
+    def condstore_refresh_flags(self, crispin_client, debug=False):
         new_highestmodseq = crispin_client.conn.folder_status(
             self.folder_name, ['HIGHESTMODSEQ'])['HIGHESTMODSEQ']
         # Ensure that we have an initial highestmodseq value stored before we
@@ -607,6 +613,7 @@ class FolderSyncEngine(Greenlet):
         changed_flags = crispin_client.condstore_changed_flags(
             self.highestmodseq)
         remote_uids = crispin_client.all_uids()
+
         with session_scope() as db_session:
             common.update_metadata(self.account_id, self.folder_id,
                                    changed_flags, db_session)
@@ -651,10 +658,10 @@ class FolderSyncEngine(Greenlet):
             common.update_metadata(self.account_id, self.folder_id,
                                    flags, db_session)
 
-    def check_uid_changes(self, crispin_client):
+    def check_uid_changes(self, crispin_client, debug=False):
         self.get_new_uids(crispin_client)
         if crispin_client.condstore_supported():
-            self.condstore_refresh_flags(crispin_client)
+            self.condstore_refresh_flags(crispin_client, debug=debug)
         else:
             self.generic_refresh_flags(crispin_client)
 

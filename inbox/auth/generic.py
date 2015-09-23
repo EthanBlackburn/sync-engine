@@ -10,7 +10,7 @@ import sqlalchemy.orm.exc
 from nylas.logging import get_logger
 log = get_logger()
 
-from inbox.auth.base import AuthHandler
+from inbox.auth.base import AuthHandler, SOCKET_TIMEOUT
 import inbox.auth.starttls
 from inbox.basicauth import ValidationError, UserRecoverableConfigError
 from inbox.models import Namespace
@@ -66,7 +66,7 @@ class GenericAuthHandler(AuthHandler):
             # don't check if the certificate is trusted by a certificate authority
             context.verify_mode = ssl.CERT_NONE
             conn = IMAPClient(host, port=port, use_uid=True, ssl=(port == 993),
-                              ssl_context=context)
+                              ssl_context=context, timeout=SOCKET_TIMEOUT)
             if port != 993:
                 # Raises an exception if TLS can't be established
                 conn.starttls(context)

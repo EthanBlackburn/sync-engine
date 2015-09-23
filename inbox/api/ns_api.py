@@ -693,7 +693,7 @@ def contact_api():
     results = results.filter(Contact.namespace_id == g.namespace.id)
 
     if args['filter']:
-        results = results.filter(Contact.email_address == args['filter'])
+        results = results.filter(Contact.email_address.ilike("%{}%".format(args['filter'])))
     results = results.order_by(asc(Contact.id))
 
     if args['view'] == 'count':

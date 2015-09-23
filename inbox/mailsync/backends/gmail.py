@@ -70,7 +70,7 @@ class GmailSyncMonitor(ImapSyncMonitor):
 
         """
         account = db_session.query(Account).get(self.account_id)
-
+        folder_ids_seen = []
         # Create new labels, folders
         for raw_folder in raw_folders:
             if raw_folder.role == 'starred':
@@ -109,9 +109,32 @@ class GmailSyncMonitor(ImapSyncMonitor):
                             display_name=raw_folder.display_name,
                             type_='folder')
                 else:
-                    Folder.find_or_create(db_session, account,
-                                          raw_folder.display_name,
-                                          raw_folder.role)
+                    folder = Label.find_or_create(db_session, account,
+                                                   raw_folder.display_name,
+                                                   raw_folder.role)
+                folder_ids_seen.append(folder.id)
+
+            else:
+                folder = db_session.query(Label). \
+                        filter(Label.account_id == account.id,
+                                Label.name == raw_folder.display_name,
+                                Label.canonical_name == None). \
+                        first()
+                if folder:
+                    folder_ids_seen.append(folder.id)
+
+        namespace = db_session.query(Namespace). \
+            filter(Namespace.account_id == account.id).one()
+
+        # # Delete all labels not seen in raw_folders.
+        # deleted_categories = db_session.query(Category). \
+        #         join(Label). \
+        #         filter(Category.namespace_id == namespace.id,
+        #                 Category.id == Label.category_id,
+        #                 Label.id.in_(folder_ids_seen)).all()
+
+        # for category in deleted_categories:
+        #     db_session.delete(category)
 
         # Ensure sync_should_run is True for the folders we want to sync (for
         # Gmail, that's just all folders, since we created them above if

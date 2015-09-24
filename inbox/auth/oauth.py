@@ -31,8 +31,9 @@ class OAuthAuthHandler(AuthHandler):
     def _get_IMAP_connection(self, account):
         host, port = account.imap_endpoint
         try:
-            conn = IMAPClient(host, port=port, use_uid=True, ssl=True,
-                              timeout=SOCKET_TIMEOUT)
+            # conn = IMAPClient(host, port=port, use_uid=True, ssl=True,
+            #                   timeout=SOCKET_TIMEOUT)
+            conn = IMAPClient(host, port=port, use_uid=True, ssl=True)
         except (IMAPClient.Error, socket.error) as exc:
             log.error('Error instantiating IMAP connection',
                       account_id=account.id,
@@ -163,3 +164,13 @@ class OAuthAuthHandler(AuthHandler):
             raise OAuthError()
 
         return userinfo_dict
+
+
+class OAuthRequestsWrapper(requests.auth.AuthBase):
+    """Helper class for setting the Authorization header on HTTP requests."""
+    def __init__(self, token):
+        self.token = token
+
+    def __call__(self, r):
+        r.headers['Authorization'] = 'Bearer {}'.format(self.token)
+        return r

@@ -48,9 +48,78 @@ class GenericAuthHandler(AuthHandler):
 
         return account
 
+    # def connect_account(self, account):
+    #     """Returns an authenticated IMAP connection for the given account.
+
+    #     Raises
+    #     ------
+    #     ValidationError
+    #         If IMAP LOGIN failed because of invalid username/password
+    #     imapclient.IMAPClient.Error, socket.error
+    #         If other errors occurred establishing the connection or logging in.
+    #     """
+    #     host, port = account.imap_endpoint
+    #     try:
+    #         context = imapclient.create_default_context()
+    #         # don't check if certificate hostname doesn't match target hostname
+    #         context.check_hostname = False
+    #         # don't check if the certificate is trusted by a certificate authority
+    #         context.verify_mode = ssl.CERT_NONE
+    #         conn = IMAPClient(host, port=port, use_uid=True, ssl=(port == 993),
+    #                           ssl_context=context, timeout=SOCKET_TIMEOUT)
+    #         if port != 993:
+    #             # Raises an exception if TLS can't be established
+    #             conn.starttls(context)
+    #     except (IMAPClient.Error, socket.error) as exc:
+    #         log.error('Error instantiating IMAP connection',
+    #                   account_id=account.id,
+    #                   email=account.email_address,
+    #                   host=host,
+    #                   port=port,
+    #                   error=exc)
+    #         raise
+
+    #     try:
+    #         conn.login(account.email_address, account.password)
+    #     except IMAPClient.Error as exc:
+    #         if _auth_is_invalid(exc):
+    #             log.error('IMAP login failed',
+    #                       account_id=account.id,
+    #                       email=account.email_address,
+    #                       host=host, port=port,
+    #                       error=exc)
+    #             raise ValidationError(exc)
+    #         else:
+    #             log.error('IMAP login failed for an unknown reason',
+    #                       account_id=account.id,
+    #                       email=account.email_address,
+    #                       host=host,
+    #                       port=port,
+    #                       error=exc)
+    #             raise
+
+    #     if 'ID' in conn.capabilities():
+    #         # Try to issue an IMAP ID command. Some whacky servers
+    #         # (163.com) require this, but it's an encouraged practice in any
+    #         # case. Since this isn't integral to the sync in general, don't
+    #         # fail if there are any errors.
+    #         # (Note that as of May 2015, this depends on a patched imapclient
+    #         # that implements the ID command.)
+    #         try:
+    #             conn.id_({'name': 'Nylas Sync Engine', 'vendor': 'Nylas',
+    #                       'contact': 'support@nylas.com'})
+    #         except Exception as exc:
+    #             log.warning('Error issuing IMAP ID command; continuing',
+    #                         account_id=account.id,
+    #                         email=account.email_address,
+    #                         host=host,
+    #                         port=port,
+    #                         error=exc)
+
+    #     return conn
+
     def connect_account(self, account):
         """Returns an authenticated IMAP connection for the given account.
-
         Raises
         ------
         ValidationError
@@ -60,13 +129,7 @@ class GenericAuthHandler(AuthHandler):
         """
         host, port = account.imap_endpoint
         try:
-            context = imapclient.create_default_context()
-            # don't check if certificate hostname doesn't match target hostname
-            context.check_hostname = False
-            # don't check if the certificate is trusted by a certificate authority
-            context.verify_mode = ssl.CERT_NONE
-            conn = IMAPClient(host, port=port, use_uid=True, ssl=(port == 993),
-                              ssl_context=context, timeout=SOCKET_TIMEOUT)
+            conn = IMAPClient(host, port=port, use_uid=True, ssl=(port == 993))
             if port != 993:
                 # Raises an exception if TLS can't be established
                 conn.starttls(context)

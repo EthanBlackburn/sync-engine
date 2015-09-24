@@ -245,12 +245,7 @@ class FolderSyncEngine(Greenlet):
     def _report_initial_sync_end(self):
         with session_scope() as db_session:
             # Fails here
-            import pdb;pdb.set_trace()
-            try:
-                q = db_session.query(Folder).get(self.folder_id)
-            except Exception as e:
-                import pdb;pdb.set_trace()
-                print e
+            q = db_session.query(Folder).get(self.folder_id)
             q.initial_sync_end = datetime.utcnow()
 
     @retry_crispin
@@ -327,7 +322,7 @@ class FolderSyncEngine(Greenlet):
 
             change_poller = spawn(self.poll_for_changes)
             bind_context(change_poller, 'changepoller', self.account_id,
-                         self.folder_id)
+                          self.folder_id)
             uids = sorted(new_uids, reverse=True)
             for uid in uids:
                 # The speedup from batching appears to be less clear for
@@ -409,9 +404,14 @@ class FolderSyncEngine(Greenlet):
     @retry_crispin
     def poll_for_changes(self):
         log.new(account_id=self.account_id, folder=self.folder_name)
-        while True:
-            log.info('polling for changes')
-            self.poll_impl(debug=True)
+        try:
+            while True:
+                log.info('polling for changes')
+                self.poll_impl(debug=True)
+        except:
+            import sys, traceback
+            print traceback.format_tb(sys.exc_info()[2])
+            raise
 
     def create_message(self, db_session, acct, folder, msg):
         assert acct is not None and acct.namespace is not None
